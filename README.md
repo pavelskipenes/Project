@@ -1,99 +1,91 @@
-Elevator Project
-================
+# Elevator Project Template for Go
+Project template for Elevator Project in Go. This repository includes drivers, elevator server for running in the lab and elevator simulator for working from outside the lab. Project description and requirements can be found in [requirements.md](requirements.md) file. This guide is targeting Ubuntu users. If you're using other distro then you probably know what you need to do.
 
-Create software for controlling `n` elevators working in parallel across `m` floors.
+## Prerequisites
+Check go version
+```
+go version
+```
+If you don't have go installed (or if you want the latest version) install it following [these instructions](https://go.dev/doc/install).
+> Note: the instructions tell you to run this command: `rm -rf /usr/local/go && tar -C /usr/local -xzf goVERSION.linux-amd64.tar.gz`. If you get access denied make sure to run it with `sudo` before `rm` and `tar` command like so: `sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf goVERSION.linux-amd64.tar.gz`
 
-Be reasonable: There may be semantic hoops that you can jump through to create something that is "technically correct". Do not hesitate to contact us if you feel that something is ambiguous or missing from these requirements.
+## Installation
 
-Main requirements
------------------
+Clone the repository. Make sure you clone this repo and not just download the zip file otherwise you'll not get the dependencies in this template.
+```
+git clone --recursive THIS_URL
+cd Project
+```
 
-### The button lights are a service guarantee
- - Once the light on a hall call button (buttons for calling an elevator to that floor; top 6 buttons on the control panel) is turned on, an elevator should arrive at that floor
- - Similarly for a cab call (for telling the elevator what floor you want to exit at; front 4 buttons on the control panel), but only the elevator at that specific workspace should take the order
+### Compile elevator server and elevator simulator
+This step is not really necessary because lab computers usually have them installed by default. But there might be some situations where you would like to compile them anyway. Like:
+- These programs are not installed on the lab computer
+- Programs are not in the path and cannot be found
+- You want to work from home
+- You use an Arm processor like Raspberry Pi or M1 MacBook
+- You just like to compile stuff
 
-### No calls are lost
- - Failure states are anything that prevents the elevator from communicating with other elevators or servicing calls
-   - This includes losing network connection entirely, software that crashes, doors that won't close, and losing power - both to the elevator motor and the machine that controls the elevator
-   - Network packet loss is not a failure, and can occur at any time
-   - An elevator entering the network is not a failure
- - No calls should be lost in the presence of failures
-   - For cab calls, handling loss of power or software crash implies that the calls are executed once service to that elevator is restored
-   - The time used to handle (compensate for) these failures should be reasonable, i.e. on the order of magnitude of seconds (not minutes)
- - If the elevator is disconnected from the network, it should still serve all the currently active calls (i.e. whatever lights are showing)
-   - It should also keep taking new cab calls, so that people can exit the elevator even if it is disconnected from the network
-   - The elevator software should not require reinitialization (manual restart) after intermittent network or motor power loss
+```
+sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list -O /etc/apt/sources.list.d/d-apt.list
+sudo apt-get update --allow-insecure-repositories
+sudo apt-get -y --allow-unauthenticated install --reinstall d-apt-keyring
+sudo apt-get update && sudo apt-get install dmd-compiler dub
+```
+[source](https://dlang.org/download.html)
 
-### The lights and buttons should function as expected
- - The hall call buttons on all workspaces should let you summon an elevator
- - Under normal circumstances, the lights on the hall buttons should show the same thing on all workspaces
-   - Normal circumstances mean when there are no active failures and no packet loss
-   - Under circumstances with packet loss, at least one light must work as expected
- - The cab button lights should not be shared between workspaces
- - The cab and hall button lights should turn on as soon as is reasonable after the button has been pressed
-   - Not ever turning on the button lights because "no guarantee is offered" is not a valid solution
-   - You are allowed to expect the user to press the button again if it does not light up
- - The cab and hall button lights should turn off when the corresponding call has been serviced
+```
+cd vendor/elevator-server/src/d/
+dmd elevatorserver.d arduino_io_card.d -of=../../build/elevatorserver
+chmod +x build/elevatorserver
+cd -
+cd vendor/Simulator-v2
+dmd -w -g src/sim_server.d src/timer_event.d -of=build/SimElevatorServer
+chmod +x build/SimElevatorServer
+cd ../../
+```
 
-### The door should function as expected
- - The "door open" lamp should be used as a substitute for an actual door
-   - The door should not be open (light switched on) while the elevator is moving
-   - The duration for keeping the door open when stopping at a floor should be 3 (three) seconds
- - The obstruction switch should substitute the door obstruction sensor inside the elevator
-   - The door should not close while it is obstructed
-   - The obstruction can trigger (and un-trigger) at any time
+elevator server can now be started by running `vendor/elevator-server/build/elevatorserver`. Simulator can be started by running `vendor/Simulator-v2/build/SimElevatorServer`.
+For usage check out `readme.md` in [elevator simulator](vendor/Simulator-v2/README.md) and [elevator server](vendor/elevator-server/README.md).
 
-### An individual elevator should behave sensibly and efficiently
- - No stopping at every floor "just to be safe"
- - Clearing a hall call button light is assumed to mean that the elevator that arrived at that floor announces "going up" or "going down" to the user (for up and down buttons respectively), and users are assumed to only enter an elevator moving in the direction they have requested
-   - This means that a single elevator arriving at a floor should *not* clear both up and down calls simultaneously
-   - If the elevator has no reason to travel in the direction it has announced (e.g. a both up and down are requested, but the people entering the elevator all want to go down), the elevator should "announce" that it is changing direction by first clearing the call in the opposite direction, then keeping the door open for another 3 seconds
+> Note that elevator-server and elevator simulator should not be running at the same time.
 
-Secondary requirements
-----------------------
+## Getting started
 
-*These requirements will only be regarded if the system satisfies the main requirements.*
+To test that your project is working copy `main.go` file from `driver-go` dependency into `src` and run it. Before you continue make sure elevator server (or if you're at home the elevator simulator) has started in its own terminal window first.
+```
+cd src
+cp vendor/driver-go/main.go main.go
+go run main.go
+```
+If elevator starts going up and down you're set. Clear out everything in `main.go` and start the project.
 
-### Calls should be served as efficiently as possible
- - The calls should be distributed across the elevators in such a way that they are serviced as soon as possible
+## Tips
 
+### Disable middle click paste
+For some reason someone decided that it's a good idea to have a separate clip board for selected text that is being pasted into any window when clicking middle mouse button. This behavior might cause accidental insertions into vs code. To disable this "functionality" click Ctrl+Shift+P in vs code and select "Preferences: Open Settings (JSON)" and paste this line in: `"editor.selectionClipboard": false`.
 
-Permitted assumptions
----------------------
+### Avoid commits with random authors
 
-The following assumptions will always be true during testing:
- 1. There is always at least one elevator that is not in a failure state
-    - I.e. there is always at least one elevator that can serve calls
-    - "No failure" includes the door obstruction: At least one elevator will be able to close its doors
- 2. Cab call redundancy with a single elevator is not required
-    - Given assumption **1**, a system containing only one elevator is assumed to be unable to fail
- 3. No network partitioning: There will never be a situation where there are multiple sets of two or more elevators with no connection between them
-    - Note that this needs 4 or more elevators to become applicable, which we will not test anyway
+When attempting to create a commit for the first time you're usually presented with something like this:
+```
+Author identity unknown
 
+*** Please tell me who you are.
 
-Unspecified behavior
---------------------
-Some things are left intentionally unspecified. Their implementation will not be tested, and are therefore up to you.
+Run
 
-How the elevator behaves when it cannot connect to the network (router) during initialization
- - You can either enter a "single-elevator" mode, or refuse to start
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
 
-How the hall (call up, call down) buttons work when the elevator is disconnected from the network
- - You can optionally refuse to take these new calls
+to set your account's default identity.
+Omit --global to set the identity only in this repository.
 
-What the stop button does
- - The stop button functionality (if/when implemented) is up to you
+fatal: unable to auto-detect email address (got 'pavel@Matebook.(none)')
+```
+git tells us that the author is unknown and suggest to add commiter email and name to global config if you're not reading carefully. This config is placed in `~/.gitconfig`. This is a bad idea in the lab because lab computers are shared and if you forget to delete it you'll end up with random authors in your project. According to [this stack overflow answer](https://stackoverflow.com/a/53013818/9590993) you can rather run `git config --local user.name "Your name"`, `git config --local user.email` and make author changes on a project level. Or just omit `--global` flag at all.
 
-Recommendations
----------------
+### Creating go modules
+If you want to create a new module in the project then you need to place it inside a folder with the same name. For instance if you want to create module named `algorithm` then you need to create a folder `algorithms` inside `src` and then all files inside there needs to start with `package algorithm`.
 
-Start with `1 <= n <= 3` elevators, and `m == 4` floors. Try to avoid hard-coding these values: You should be able to add a fourth elevator with no extra configuration, or change the number of floors with minimal configuration. You do, however, not need to test for `n > 3` and `m != 4`.
-
-If you need to specify the identifier of an elevator when it starts, we recommend that you implement the command-line switch `--id <number>`.
-
-Additional resources
---------------------
-
-Go to [the project resources repository](https://github.com/TTK4145/Project-resources) to find more resources for doing the project. This information is not required for the project, and is therefore maintained separately.
-
-See [Testing from home](/testing_from_home.md) document on how to test with unreliable networking on a single computer.
+### Updating the dependencies
+If the dependencies got a new commit you can update them all by running `git submodule foreach git pull`. Then commit the changes.

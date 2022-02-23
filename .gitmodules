@@ -1,0 +1,12 @@
+[submodule "vendor/network-go"]
+	path = vendor/network-go
+	url = https://github.com/TTK4145/network-go.git
+[submodule "vendor/driver-go"]
+	path = vendor/driver-go
+	url = https://github.com/TTK4145/driver-go.git
+[submodule "vendor/elevator-server"]
+	path = vendor/elevator-server
+	url = https://github.com/TTK4145/elevator-server
+[submodule "vendor/Simulator-v2"]
+	path = vendor/Simulator-v2
+	url = https://github.com/TTK4145/Simulator-v2
