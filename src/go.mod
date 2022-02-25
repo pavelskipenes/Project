@@ -1,4 +1,4 @@
-package main
+module main
 
 require Network-go v0.0.0
 replace Network-go => ../vendor/network-go
