@@ -10,3 +10,6 @@
 [submodule "vendor/Simulator-v2"]
 	path = vendor/Simulator-v2
 	url = https://github.com/TTK4145/Simulator-v2
+[submodule "vendor/Project-resources"]
+	path = vendor/Project-resources
+	url = https://github.com/TTK4145/Project-resources
